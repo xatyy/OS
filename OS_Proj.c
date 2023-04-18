@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
+#include <dirent.h>
 
 struct stat buffer;
 struct stat buffer_target;
@@ -17,6 +18,13 @@ int main(int argc, char ** argv){
     
 
     for(int i = 1; i < argc; i++){
+        int pid;
+
+            if((pid=fork()) < 0){
+                exit(0);
+            } 
+            
+            if(pid==0){
         if(lstat(argv[i], &buffer) == 0){
             mode_t m;
 
@@ -24,7 +32,7 @@ int main(int argc, char ** argv){
             char sym[1024];
 
             m = buffer.st_mode;
-            
+
             
             if(S_ISREG(m)){
                 printf("File #%d is regular file.\n\n", i);
@@ -106,8 +114,74 @@ int main(int argc, char ** argv){
 
                 fgets(option, 1024, stdin);
 
-                DIR *opendir(argv[i]);
-                
+                DIR *dir;
+                struct dirent *entry;
+
+                dir = opendir(argv[i]);  
+
+                if(dir == NULL){
+                    printf("Error opening dir! \n");
+                    exit(-1);
+                }
+
+                if(strstr(option, "-n") || strstr(option, "n")){
+                    printf("Dir name: %s \n", argv[i]);
+                }
+
+                if(strstr(option, "d") || strstr(option, "-d")){
+                printf("The directory dimension/size is: %ld bytes\n", buffer.st_size);
+                }
+
+                if(strstr(option, "-a") || strstr(option, "a")){
+                    printf("Access Rights:");
+                    printf("\nOWNER:");
+                    printf("\n  Read:");
+                    printf((m & S_IRUSR) ? "YES \n" : "NO \n");
+                    printf("  Write:");
+                    printf((m & S_IWUSR) ? "YES \n" : "NO \n");
+                    printf("  Exec:");
+                    printf((m & S_IXUSR) ? "YES \n" : "NO \n");
+
+                    printf("\nGROUP:");
+                    printf("\n  Read:");
+                    printf((m & S_IRGRP) ? "YES \n" : "NO \n");
+                    printf("  Write:");
+                    printf((m & S_IWGRP) ? "YES \n" : "NO \n");
+                    printf("  Exec:");
+                    printf((m & S_IXGRP) ? "YES \n" : "NO \n");
+
+                    printf("\nUSERS:");
+                    printf("\n  Read:");
+                    printf((m & S_IROTH) ? "YES \n" : "NO \n");
+                    printf("  Write:");
+                    printf((m & S_IWOTH) ? "YES \n" : "NO \n");
+                    printf("  Exec:");
+                    printf((m & S_IXOTH) ? "YES \n" : "NO \n");
+                }
+
+                if(strstr(option, "c") || strstr(option, "-c")){
+
+                    int files_number = 0;
+
+                    while((entry = readdir(dir)) != NULL){
+                        char names[1024];
+                        snprintf(names, sizeof(names), "%s/%s", argv[i], entry->d_name);
+
+                        if (lstat(names, &buffer) == -1) {
+                            perror("\nError getting file st: ");
+                            exit(1);
+                        }
+
+                        if(S_ISREG(buffer.st_mode) && strstr(entry->d_name, ".c")){
+                            
+                            files_number++;
+
+                        }
+                    }
+                    printf("\nTotal number of .c files in the directory is: %d\n", files_number);
+                    closedir(dir);
+                }
+
             }else if(S_ISLNK(m)){
                 printf("File #%d is symbolic link.\n", i);
 
@@ -175,6 +249,8 @@ int main(int argc, char ** argv){
             exit(-1);
         }
         
+    }
+        exit(0);
     }
 
     return 0;
