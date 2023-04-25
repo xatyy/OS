@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <string.h>
 #include <dirent.h>
@@ -18,13 +19,13 @@ int main(int argc, char ** argv){
     
 
     for(int i = 1; i < argc; i++){
-        int pid;
+        int pid, status;
 
             if((pid=fork()) < 0){
                 exit(0);
             } 
             
-            if(pid==0){
+            else if(pid==0){
         if(lstat(argv[i], &buffer) == 0){
             mode_t m;
 
@@ -35,6 +36,21 @@ int main(int argc, char ** argv){
 
             
             if(S_ISREG(m)){
+                if(strstr(argv[i],".c")){
+                    printf("Argument is a .c file.\n");
+                    pid = fork();
+
+                    if(pid < 0){
+                        exit(0);
+                    }else if(pid == 0){
+                        execlp("./compile.sh", "./compile.sh",argv[i], NULL);
+                        exit(0);
+                    }else{
+                        int status;
+                        wait(&status);
+                    }
+
+                }
                 printf("File #%d is regular file.\n\n", i);
                 printf("Please choose an option for regular file #%d: \n", i);
                 printf("    -n (file name)\n");
@@ -249,8 +265,12 @@ int main(int argc, char ** argv){
             exit(-1);
         }
         
+        exit(EXIT_SUCCESS);
+        
+    }else{
+        waitpid(pid, &status, 0);
     }
-        exit(0);
+        
     }
 
     return 0;
