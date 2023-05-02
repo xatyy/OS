@@ -38,11 +38,24 @@ int main(int argc, char ** argv){
             if(S_ISREG(m)){
                 if(strstr(argv[i],".c")){
                     printf("Argument is a .c file.\n");
-                    pid = fork();
+                    int pfd[2];
+                    int pid;
+                    FILE *stream;
+                    char string[1024];
 
-                    if(pid < 0){
-                        exit(0);
+
+                    if(pipe(pfd)<0){
+                        perror("Pipe creation error\n");
+                        exit(1);
+                    }
+
+                    if((pid=fork())<0){
+                        perror("Child process creation error\n");
+                        exit(1);
                     }else if(pid == 0){
+                       
+                        close(pfd[0]);
+                        dup2(pfd[1],1);
                         execlp("./compile.sh", "./compile.sh",argv[i], NULL);
                         exit(0);
                     }else{
@@ -50,6 +63,14 @@ int main(int argc, char ** argv){
                         wait(&status);
                     }
 
+                    close(pfd[1]);
+                    stream=fdopen(pfd[0],"r");
+                    while(read(pfd[0], string, 1024)){
+                    fscanf(stream,"%s", string);
+                    }
+                    close(pfd[0]);
+
+                    //printf("%s\n", string);
                 }
                 printf("File #%d is regular file.\n\n", i);
                 printf("Please choose an option for regular file #%d: \n", i);
