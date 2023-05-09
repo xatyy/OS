@@ -40,7 +40,6 @@ int main(int argc, char ** argv){
                     printf("Argument is a .c file.\n");
                     int pfd[2];
                     int pid;
-                    FILE *stream;
                     char string[1024];
 
 
@@ -64,14 +63,29 @@ int main(int argc, char ** argv){
                     }
 
                     close(pfd[1]);
-                    stream=fdopen(pfd[0],"r");
                     while(read(pfd[0], string, 1024)){
-                    fscanf(stream,"%s", string);
+                    
                     }
-                    close(pfd[0]);
+                    close(pfd[0]);   
 
-                    //printf("%s\n", string);
+
+                    int err;
+                    int warn;
+
+                    sscanf(string, "%d\n%d", &err, &warn);
+
+                    FILE *f;
+
+                    char * file_name;
+
+                    file_name = strtok(argv[i], ".");
+                    
+                    //printf("%s", file_name);
+                    
                 }
+
+                
+
                 printf("File #%d is regular file.\n\n", i);
                 printf("Please choose an option for regular file #%d: \n", i);
                 printf("    -n (file name)\n");
